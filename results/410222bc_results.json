@@ -1,0 +1,285 @@
+{
+  "task_id": "410222bc",
+  "total_sessions": 3,
+  "methods": {
+    "Ours": {
+      "metrics": {
+        "AVG": 50.0,
+        "N_IR": 0.0,
+        "N_R2": 0.0
+      },
+      "binary_alignment_rate": 0.0,
+      "al_curve": [
+        50.0,
+        50.0,
+        50.0,
+        50.0,
+        50.0
+      ],
+      "total_evaluations": 15,
+      "sessions": [
+        {
+          "session_id": "user_001_session_001",
+          "scores": [
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "binary": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "details": [
+            {
+              "round": 1,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 2,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 3,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 4,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 5,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            }
+          ]
+        },
+        {
+          "session_id": "user_002_session_001",
+          "scores": [
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "binary": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "details": [
+            {
+              "round": 1,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 2,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 3,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 4,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 5,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            }
+          ]
+        },
+        {
+          "session_id": "user_003_session_001",
+          "scores": [
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "binary": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "details": [
+            {
+              "round": 1,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 2,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 3,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 4,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            },
+            {
+              "round": 5,
+              "score": 50,
+              "breakdown": {
+                "style": 10,
+                "content": 10,
+                "naturalness": 10,
+                "personalization": 10,
+                "conversation": 10
+              },
+              "binary": 0,
+              "reasoning": "Evaluation failed"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "radar_data": {
+    "Ours": {
+      "AVG": 50.0,
+      "N_IR": 50.0,
+      "N_R2": 0.0,
+      "Consistency": 100.0,
+      "Binary_Rate": 0.0
+    }
+  }
+}

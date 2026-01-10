@@ -475,10 +475,44 @@ body {
     padding: 1rem;
     border-radius: var(--radius-md);
     overflow-x: auto;
-    font-family: 'Fira Code', monospace;
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    white-space: pre;
+    margin-bottom: 1rem;
+}
+
+.field-table {
+    margin-top: 1rem;
+}
+
+.field-table table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.85rem;
-    line-height: 1.5;
+}
+
+.field-table th,
+.field-table td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.field-table th {
+    background: var(--bg-primary);
     color: var(--accent-tertiary);
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.field-table td {
+    color: var(--text-secondary);
+}
+
+.field-table td:first-child {
+    color: var(--accent-primary);
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
 }
 
 .metric-docs {
