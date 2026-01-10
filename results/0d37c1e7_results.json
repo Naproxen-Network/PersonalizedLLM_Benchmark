@@ -1,0 +1,54 @@
+{
+  "task_id": "0d37c1e7",
+  "total_sessions": 2,
+  "methods": {
+    "PersonaSteer": {
+      "metrics": {
+        "AVG": 50.0,
+        "N_IR": 0.0,
+        "N_R2": 0.0
+      },
+      "al_curve": [
+        50.0,
+        50.0,
+        50.0,
+        50.0,
+        50.0
+      ],
+      "total_evaluations": 10,
+      "sessions": [
+        {
+          "session_id": "user_001_session_001",
+          "scores": [
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "details": []
+        },
+        {
+          "session_id": "user_002_session_001",
+          "scores": [
+            50,
+            50,
+            50,
+            50,
+            50
+          ],
+          "details": []
+        }
+      ]
+    }
+  },
+  "radar_data": {
+    "PersonaSteer": {
+      "AVG": 50.0,
+      "N_IR": 50.0,
+      "N_R2": 0.0,
+      "Consistency": 100.0,
+      "Improvement": 50.0
+    }
+  }
+}

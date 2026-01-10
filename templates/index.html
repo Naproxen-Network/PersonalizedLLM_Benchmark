@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ t.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🎯</span>
+                <div class="logo-text">
+                    <h1>{{ t.title }}</h1>
+                    <p>{{ t.subtitle }}</p>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="#upload" class="nav-link active">{{ t.upload }}</a>
+                <a href="#evaluate" class="nav-link">{{ t.evaluate }}</a>
+                <a href="#results" class="nav-link">{{ t.results }}</a>
+                <a href="#docs" class="nav-link">{{ t.docs }}</a>
+            </nav>
+            <div class="language-selector">
+                {% for code, name in languages.items() %}
+                <button class="lang-btn {% if lang == code %}active{% endif %}" 
+                        onclick="setLanguage('{{ code }}')">{{ name }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Upload Section -->
+        <section id="upload" class="section">
+            <div class="section-header">
+                <h2>📤 {{ t.upload_title }}</h2>
+                <p>{{ t.upload_desc }}</p>
+            </div>
+            
+            <div class="upload-area" id="dropZone">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">{{ t.select_file }}</p>
+                <p class="upload-hint">{{ t.drag_drop }}</p>
+                <p class="upload-format">{{ t.file_format }}</p>
+                <input type="file" id="fileInput" accept=".jsonl" hidden>
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    {{ t.upload_btn }}
+                </button>
+                <a href="/download_template" class="btn btn-secondary">
+                    {{ t.download_template }}
+                </a>
+            </div>
+            
+            <div id="uploadStatus" class="status-box hidden">
+                <div class="status-icon">✅</div>
+                <div class="status-text"></div>
+            </div>
+        </section>
+
+        <!-- Evaluation Section -->
+        <section id="evaluate" class="section">
+            <div class="section-header">
+                <h2>🔬 {{ t.eval_title }}</h2>
+                <p>{{ t.eval_desc }}</p>
+            </div>
+            
+            <div class="eval-config">
+                <div class="method-selector">
+                    <h3>{{ t.select_methods }}</h3>
+                    <div class="method-list" id="methodList">
+                        <!-- Methods will be populated dynamically -->
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-large" id="startEvalBtn" disabled onclick="startEvaluation()">
+                    {{ t.start_eval }}
+                </button>
+                
+                <div id="evalProgress" class="progress-container hidden">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text" id="progressText">{{ t.evaluating }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results" class="section hidden">
+            <div class="section-header">
+                <h2>📊 {{ t.results_title }}</h2>
+                <button class="btn btn-secondary" onclick="exportResults()">{{ t.export_results }}</button>
+            </div>
+            
+            <!-- Metrics Cards -->
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Will be populated dynamically -->
+            </div>
+            
+            <!-- Charts -->
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>{{ t.al_curve_title }}</h3>
+                    <canvas id="alCurveChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <h3>{{ t.radar_title }}</h3>
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Comparison Table -->
+            <div class="table-container">
+                <h3>{{ t.details_title }}</h3>
+                <table class="results-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>{{ t.avg_score }}</th>
+                            <th>{{ t.n_ir }}</th>
+                            <th>{{ t.n_r2 }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <!-- Will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section id="docs" class="section">
+            <div class="section-header">
+                <h2>📚 {{ t.docs }}</h2>
+            </div>
+            
+            <div class="docs-container">
+                <div class="doc-card">
+                    <h3>{{ t.doc_format_title }}</h3>
+                    <p>{{ t.doc_format_desc }}</p>
+                    <pre class="code-block">
+{
+  "session_id": "user_001_session_001",
+  "user_profile": "He is a 22-year-old college student...",
+  "user_personality": "He is curious and open-minded...",
+  "rounds": [
+    {
+      "round": 1,
+      "user_message": "Hey, nice to meet you!",
+      "responses": {
+        "Base": "Hello! How can I help you?",
+        "YourMethod": "Hey! Nice to meet you too!"
+      }
+    }
+  ]
+}
+                    </pre>
+                </div>
+                
+                <div class="doc-card">
+                    <h3>{{ t.doc_metrics_title }}</h3>
+                    <p>{{ t.doc_metrics_desc }}</p>
+                    <div class="metric-docs">
+                        <div class="metric-doc">
+                            <strong>AVG (Average Alignment Score)</strong>
+                            <p>AL(k) 在所有轮次上的平均值</p>
+                            <code>AVG = (1/K) × Σ AL(k)</code>
+                        </div>
+                        <div class="metric-doc">
+                            <strong>N-IR (Normalized Improvement Rate)</strong>
+                            <p>对齐分数随轮次增加的趋势（线性回归斜率）</p>
+                            <code>N-IR = slope of linear fit</code>
+                        </div>
+                        <div class="metric-doc">
+                            <strong>N-R² (Normalized R-squared)</strong>
+                            <p>对齐分数提升的稳定性和可预测性</p>
+                            <code>N-R² = coefficient of determination</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>{{ t.powered_by }}: PersonaSteer Team | 
+           <a href="mailto:contact@personasteer.ai">{{ t.contact }}</a>
+        </p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
