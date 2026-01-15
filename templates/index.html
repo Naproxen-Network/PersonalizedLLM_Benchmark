@@ -122,9 +122,11 @@
                     <thead>
                         <tr>
                             <th>Method</th>
-                            <th>{{ t.avg_score }}</th>
-                            <th>{{ t.n_ir }}</th>
-                            <th>{{ t.n_r2 }}</th>
+                            <th>AVG</th>
+                            <th>Slope (b)</th>
+                            <th>R²</th>
+                            <th>Improvement</th>
+                            <th>Binary Rate</th>
                         </tr>
                     </thead>
                     <tbody id="resultsTableBody">
@@ -179,19 +181,34 @@
                     <p>{{ t.doc_metrics_desc }}</p>
                     <div class="metric-docs">
                         <div class="metric-doc">
+                            <strong>AL(k) - 主指标</strong>
+                            <p>第k轮的对齐水平 (Alignment Level at k-Turn)，范围 0-100</p>
+                            <code>AL(k) = Score at round k</code>
+                        </div>
+                        <div class="metric-doc">
                             <strong>AVG (Average Alignment Score)</strong>
-                            <p>AL(k) 在所有轮次上的平均值 (0-100)</p>
+                            <p>AL(k) 在所有轮次上的平均值</p>
                             <code>AVG = (1/K) × Σ AL(k)</code>
                         </div>
                         <div class="metric-doc">
-                            <strong>N-IR (Normalized Improvement Rate)</strong>
-                            <p>对齐分数随轮次增加的趋势（线性回归斜率）</p>
-                            <code>N-IR = slope of AL(k) ~ k</code>
+                            <strong>Slope (b) - 辅助指标1</strong>
+                            <p>线性回归斜率，反映对齐分数随轮次增加的趋势</p>
+                            <code>argmin<sub>b,a</sub> Σ(b×k + a - AL(k))²</code>
                         </div>
                         <div class="metric-doc">
-                            <strong>N-R² (Normalized R-squared)</strong>
-                            <p>对齐分数提升的稳定性和可预测性</p>
-                            <code>N-R² = coefficient of determination</code>
+                            <strong>Intercept (a) - 辅助指标2</strong>
+                            <p>线性回归截距，反映初始对齐水平</p>
+                            <code>argmin<sub>b,a</sub> Σ(b×k + a - AL(k))²</code>
+                        </div>
+                        <div class="metric-doc">
+                            <strong>R² (Coefficient of Determination)</strong>
+                            <p>决定系数，反映对齐改进的稳定性和可预测性</p>
+                            <code>R² = 1 - SS<sub>res</sub>/SS<sub>tot</sub></code>
+                        </div>
+                        <div class="metric-doc">
+                            <strong>N-AL(k) - 归一化对齐水平</strong>
+                            <p>将 AL(k) 归一化到 0-1 范围</p>
+                            <code>N-AL(k) = (AL(k) - min AL) / (max AL - min AL)</code>
                         </div>
                         <div class="metric-doc">
                             <strong>Binary Alignment Rate</strong>

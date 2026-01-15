@@ -423,7 +423,7 @@ function drawRadarChart(results) {
     
     const radarData = results.radar_data;
     const methods = Object.keys(radarData);
-    const dimensions = ['AVG', 'N_IR', 'N_R2', 'Consistency', 'Improvement'];
+    const dimensions = ['AVG', 'Slope', 'R2', 'Consistency', 'Improvement'];
     
     const datasets = methods.map((method, idx) => {
         const colors = methodColors[method] || methodColors['default'];
@@ -479,8 +479,9 @@ function populateResultsTable(results) {
     
     const methods = Object.keys(results.methods);
     const bestAVG = Math.max(...methods.map(m => results.methods[m].metrics.AVG));
-    const bestNIR = Math.max(...methods.map(m => results.methods[m].metrics.N_IR));
-    const bestNR2 = Math.max(...methods.map(m => results.methods[m].metrics.N_R2));
+    const bestSlope = Math.max(...methods.map(m => results.methods[m].metrics.Slope));
+    const bestR2 = Math.max(...methods.map(m => results.methods[m].metrics.R2));
+    const bestImprovement = Math.max(...methods.map(m => results.methods[m].metrics.Improvement || 0));
     
     methods.forEach(method => {
         const data = results.methods[method];
@@ -490,8 +491,10 @@ function populateResultsTable(results) {
         row.innerHTML = `
             <td><strong>${method}</strong></td>
             <td class="${metrics.AVG === bestAVG ? 'best' : ''}">${metrics.AVG}</td>
-            <td class="${metrics.N_IR === bestNIR ? 'best' : ''}">${metrics.N_IR}</td>
-            <td class="${metrics.N_R2 === bestNR2 ? 'best' : ''}">${metrics.N_R2}</td>
+            <td class="${metrics.Slope === bestSlope ? 'best' : ''}">${metrics.Slope}</td>
+            <td class="${metrics.R2 === bestR2 ? 'best' : ''}">${metrics.R2}</td>
+            <td class="${metrics.Improvement === bestImprovement ? 'best' : ''}">${metrics.Improvement || 0}</td>
+            <td>${data.binary_alignment_rate}%</td>
         `;
         tbody.appendChild(row);
     });

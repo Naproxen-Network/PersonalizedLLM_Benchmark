@@ -380,29 +380,67 @@ class BenchmarkEvaluator:
         """
         计算核心指标
         
-        - AVG: 平均对齐分数
-        - N-IR: 归一化改进率 (线性回归斜率)
-        - N-R²: 归一化决定系数
+        主指标:
+        - AL(k): 第k轮的对齐水平 (Alignment Level at k-Turn)
+        - AVG: 平均对齐分数 = (1/K) Σ AL(k)
+        
+        辅助指标 (基于线性回归 argmin_{b,a} Σ(b×k + a - AL(k))²):
+        - Slope (b): 线性回归斜率，反映对齐改进趋势
+        - Intercept (a): 线性回归截距，反映初始对齐水平
+        - R²: 决定系数，反映改进稳定性
+        
+        归一化指标:
+        - N-AL(k): 归一化对齐水平 = (AL(k) - min AL) / (max AL - min AL)
         """
         al = np.array(al_scores)
         k = np.arange(1, len(al) + 1)
         
-        # AVG
+        # AVG: 主指标 - 平均对齐分数
         avg = float(np.mean(al))
         
-        # 线性回归计算 N-IR 和 N-R²
+        # 线性回归: argmin_{b,a} Σ(b×k + a - AL(k))²
+        # 求解得到斜率 b (Slope) 和截距 a (Intercept)
         if len(al) > 1:
             slope, intercept, r_value, p_value, std_err = stats.linregress(k, al)
-            n_ir = float(slope)
-            n_r2 = float(r_value ** 2)
+            b = float(slope)        # 斜率 - 改进趋势
+            a = float(intercept)    # 截距 - 初始水平
+            r2 = float(r_value ** 2)  # R² - 拟合优度
         else:
-            n_ir = 0.0
-            n_r2 = 0.0
+            b = 0.0
+            a = float(al[0]) if len(al) > 0 else 0.0
+            r2 = 0.0
+        
+        # N-AL(k) 归一化: (AL(k) - min AL(i)) / (max AL(i) - min AL(i))
+        al_min = float(np.min(al))
+        al_max = float(np.max(al))
+        al_range = al_max - al_min
+        
+        # 归一化 AL 曲线 (0-1 范围)
+        if al_range > 0:
+            n_al = [(float(score) - al_min) / al_range for score in al]
+            n_al_avg = float(np.mean(n_al))  # 归一化后的平均值
+        else:
+            n_al = [0.5] * len(al)  # 无变化时设为 0.5
+            n_al_avg = 0.5
+        
+        # 计算改进幅度: 最后一轮 vs 第一轮
+        if len(al) >= 2:
+            improvement = float(al[-1] - al[0])
+            improvement_rate = improvement / al[0] * 100 if al[0] > 0 else 0
+        else:
+            improvement = 0.0
+            improvement_rate = 0.0
         
         return {
-            'AVG': round(avg, 2),
-            'N_IR': round(n_ir, 4),
-            'N_R2': round(n_r2, 4)
+            'AVG': round(avg, 2),                    # 主指标: 平均对齐分数
+            'Slope': round(b, 4),                    # 辅助指标1: 线性回归斜率 b
+            'Intercept': round(a, 2),                # 辅助指标2: 线性回归截距 a  
+            'R2': round(r2, 4),                      # R²: 拟合优度
+            'N_AL_Avg': round(n_al_avg, 4),          # 归一化 AL 平均值
+            'AL_Min': round(al_min, 2),              # AL 最小值
+            'AL_Max': round(al_max, 2),              # AL 最大值
+            'Improvement': round(improvement, 2),    # 绝对改进 (最后-第一)
+            'Improvement_Rate': round(improvement_rate, 2)  # 改进率 %
         }
     
     def evaluate_session(self, session: Dict, methods: List[str]) -> Dict[str, Any]:
@@ -613,7 +651,16 @@ class BenchmarkEvaluator:
             json.dump(checkpoint, f, ensure_ascii=False, indent=2)
     
     def _generate_radar_data(self, methods_results: Dict) -> Dict:
-        """生成雷达图可视化数据"""
+        """
+        生成雷达图可视化数据
+        
+        雷达图5个维度 (全部归一化到 0-100):
+        1. AVG: 平均对齐分数 (已经是0-100)
+        2. Slope: 线性回归斜率 b，反映改进趋势
+        3. R²: 决定系数，反映改进稳定性
+        4. Consistency: 一致性 (AL标准差的反向)
+        5. Improvement: 绝对改进幅度
+        """
         radar_data = {}
         
         for method, data in methods_results.items():
@@ -621,29 +668,36 @@ class BenchmarkEvaluator:
             al_curve = data.get('al_curve', [])
             binary_rate = data.get('binary_alignment_rate', 0)
             
-            # 归一化到 0-100 尺度
-            avg_norm = metrics.get('AVG', 50)
-            n_ir_norm = min(100, max(0, 50 + metrics.get('N_IR', 0) * 20))  # 以50为基准
-            n_r2_norm = metrics.get('N_R2', 0) * 100
+            # 1. AVG: 平均对齐分数 (0-100)
+            avg = metrics.get('AVG', 50)
             
-            # 一致性：AL(k) 标准差的反向
+            # 2. Slope (b): 斜率归一化到 0-100
+            # 斜率范围大约 -5 到 +5，以50为基准，±5对应0和100
+            slope = metrics.get('Slope', 0)
+            slope_norm = min(100, max(0, 50 + slope * 10))
+            
+            # 3. R²: 决定系数 (0-1) → (0-100)
+            r2 = metrics.get('R2', 0) * 100
+            
+            # 4. Consistency: 一致性 = 100 - 标准差归一化
+            # 标准差越小，一致性越高
             if al_curve and len(al_curve) > 1:
-                consistency = max(0, 100 - np.std(al_curve) * 2)
+                std = np.std(al_curve)
+                consistency = max(0, 100 - std * 2)  # std=50时consistency=0
             else:
                 consistency = 50
             
-            # 提升幅度：最后一轮 vs 第一轮
-            if len(al_curve) >= 2:
-                improvement = min(100, max(0, 50 + (al_curve[-1] - al_curve[0]) / 2))
-            else:
-                improvement = 50
+            # 5. Improvement: 改进幅度归一化
+            # 使用 Improvement_Rate (%) 转换到 0-100
+            improvement_rate = metrics.get('Improvement_Rate', 0)
+            improvement_norm = min(100, max(0, 50 + improvement_rate / 2))
             
             radar_data[method] = {
-                'AVG': round(avg_norm, 1),
-                'N_IR': round(n_ir_norm, 1),
-                'N_R2': round(n_r2_norm, 1),
+                'AVG': round(avg, 1),
+                'Slope': round(slope_norm, 1),       # 线性回归斜率 b
+                'R2': round(r2, 1),                  # 决定系数
                 'Consistency': round(consistency, 1),
-                'Binary_Rate': round(binary_rate, 1)
+                'Improvement': round(improvement_norm, 1)
             }
         
         return radar_data
