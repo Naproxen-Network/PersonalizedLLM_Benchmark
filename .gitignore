@@ -4,3 +4,8 @@ __pycache__/
 .env
 .venv/
 venv/
+
+# Uploaded files and results (temporary)
+uploads/*.jsonl
+results/*.json
+results/*_checkpoint.json

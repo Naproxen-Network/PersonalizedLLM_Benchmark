@@ -546,6 +546,42 @@ body {
     color: var(--accent-tertiary);
 }
 
+/* Evaluation Criteria Card */
+.eval-criteria-card {
+    grid-column: 1 / -1;
+}
+
+.criteria-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.criteria-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+}
+
+.criteria-num {
+    font-size: 0.9rem;
+    color: var(--accent-warning);
+}
+
+.criteria-item strong {
+    color: var(--accent-secondary);
+    min-width: 80px;
+}
+
+.criteria-item span:last-child {
+    color: var(--text-secondary);
+    flex: 1;
+}
+
 /* Footer */
 .footer {
     text-align: center;

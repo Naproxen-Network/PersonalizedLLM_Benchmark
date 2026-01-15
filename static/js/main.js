@@ -210,15 +210,23 @@ function startEvaluation() {
         progressFill.style.width = fakeProgress + '%';
     }, 500);
     
+    // 评测可能需要较长时间，使用 AbortController 设置 10 分钟超时
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes
+    
     fetch('/evaluate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             filename: uploadedFilename,
             methods: selectedMethods
-        })
+        }),
+        signal: controller.signal
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeoutId);
+        return response.json();
+    })
     .then(data => {
         clearInterval(progressInterval);
         progressFill.style.width = '100%';
@@ -238,8 +246,18 @@ function startEvaluation() {
     })
     .catch(error => {
         clearInterval(progressInterval);
+        clearTimeout(timeoutId);
         progressFill.style.width = '0%';
-        progressText.textContent = '❌ ' + error.message;
+        
+        // 处理超时和网络错误
+        if (error.name === 'AbortError') {
+            progressText.textContent = '❌ 评测超时，请稍后重试';
+        } else if (error.message === 'Failed to fetch') {
+            progressText.textContent = '❌ 网络错误，请检查服务器是否运行';
+        } else {
+            progressText.textContent = '❌ ' + error.message;
+        }
+        
         progress.classList.remove('evaluating');
         startBtn.disabled = false;
     });

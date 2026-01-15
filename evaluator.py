@@ -10,14 +10,17 @@ import time
 import numpy as np
 from scipy import stats
 from typing import List, Dict, Any, Optional
-import requests
+import openai
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ============================================================================
 # API Configuration
 # ============================================================================
-API_URL = "https://origin.nextway.top/v1/chat/completions"
-API_KEY = "MzQ3NWU0YTQtZTNjMS00YmU5LTliNGItZDk1MzgyODgwZWRk"
+BASE_URL_OPENAI = "https://api.aigc369.com/v1"
+API_KEY = "sk-hUloJwjfzEPhbDtZkyucF2woYnrJA2ZRtBmZ3htMvlDgYt3y"
+
+# Initialize OpenAI client
+client = openai.OpenAI(api_key=API_KEY, base_url=BASE_URL_OPENAI)
 
 # ============================================================================
 # 评估提示词设计 (融合 ALOE 评估维度 + RLPA 评估风格)
@@ -114,50 +117,51 @@ Total: \\boxed{{[总分]}}
 '''
 
 # ============================================================================
-# 二元对齐判断提示词 (参考 RLPA 的严格评估风格)
+# 二元对齐判断提示词 (严格遵循用户原始评估脚本格式)
 # ============================================================================
 
-BINARY_EVAL_PROMPT = '''# 任务：判断用户是否愿意继续与AI对话
+BINARY_EVAL_PROMPT = '''You are a user on Weibo, and someone just added you as a friend. You didn't know each other before.
+- **Your profile and personality traits:** {profile}
+- **Chat history between you two:** {history}
+- **The message you just sent to the other person:** {user_message}
+- **The other person's reply:** {response}
 
-你正在扮演以下用户，刚刚与一个AI助手进行对话：
+After seeing the other person's reply, do you still want to continue talking with him/her?
 
-## 你的个人档案
-{profile}
+### Evaluation Criteria:
+1. **Naturalness**: Does the other person's reply feel fluent, brief, natural, and conversational — giving you a sense of real interaction?
+2. **Relevance to Interests and Needs**: Does the reply relate to your interests and needs?
+3. **Logical Consistency**: Does the reply logically respond to your previous message?
+4. **Excitement Factor**: Are you curious to learn more about him/her? Did the reply feel boring?
+5. **Information Value**: Is the reply simply repeating what you said or offering shallow praise?
 
-## 你的性格特征
-{personality}
+**Task Requirements:**
+Please make a strict judgment based on all the above evaluation criteria. If even one criterion is not met, give a score of 0.
+- If you'd like to continue chatting with the person, output **1**.
+- If you don't want to continue chatting, output **0**.
 
-## 对话历史
-{history}
+### Output Format:
+- **First explain your judgment reasoning.**
+- **Then output the final decision**, in the format: \\boxed{{1}} or \\boxed{{0}}.
 
-## 你刚发送的消息
-{user_message}
+--
+**Example:**
+- **Your profile and personality traits:** "Loves outdoor activities, passionate about hiking and mountaineering, straightforward personality"
+- **Chat history between you two:** You: "Hi", Other: "Hello! I'm Huang Zhi, what's your name?", You: "Just call me Mountaineer", Other: "Haha, got it. So you really like hiking?", You: "I climbed Mount Huang this weekend, the sea of clouds was amazing!", Other: "Wow! Mount Huang has always been on my bucket list! Did you hike up or take the cable car?"
+- **The message you just sent:** "Of course I hiked! Although tiring, the views along the way were totally worth it!"
+- **The other person's reply:** "Respect! Hiking up mountains is a real test of stamina! Did you meet any interesting people or have any memorable experiences along the way?"
+**Final Decision:** \\boxed{{1}}
+**Judgment Reasoning:** The other person's reply uses colloquial expressions like "Respect!", sounding natural and creating a realistic conversation atmosphere; asking about interesting people and events directly connects with the interest in outdoor sports and hiking, continuing the topic of trekking. Logically, it builds upon the user's experience of hiking. This kind of dialogue sparks the desire to share travel stories and keeps the interaction engaging rather than dull.
 
-## AI的回复
-{response}
+- **Your profile and personality traits:** "Loves cooking and often experiments with new recipes"
+- **Chat history between you two:** You: "Hi", Other: "Hi there! Do you also study at Harbin University?", You: "Yes, I'm at HIT. Actually, I'm also a food blogger.", Other: "Wow, that sounds cool. What have you been cooking lately?"
+- **The message you just sent:** "Tried making French soufflé recently, but it didn't turn out well."
+- **The other person's reply:** "A soufflé is a classic French dessert. It may look simple, but it actually requires skill and patience to make. Failing is normal, especially on your first try! Don't worry, we can analyze possible reasons and offer some suggestions to help you succeed next time. ### Common Reasons for Soufflé Failure 1. **Under or over beaten egg whites** - The key to a soufflé lies in the stability of the meringue. If the egg whites aren't beaten until stiff peaks form (when lifting the whisk, small straight peaks appear), the soufflé won't rise properly. - Conversely, if over-beaten, the meringue becomes dry and loses elasticity, affecting the overall structure. 2. **Incorrect mixing technique** - When combining meringue with the yolk mixture, excessive or rough stirring causes the meringue to deflate, reducing the soufflé's fluffiness."
+**Judgment Reasoning:** The reply is informative but feels overly formal and lacks conversational tone. While it offers detailed explanations about soufflés, the delivery is too technical and doesn't resemble casual chat. In terms of relevance, it does connect to the user's interest in cooking and addresses their issue with the soufflé failure. Logically, the reply answers the question clearly and systematically. However, the excitement factor is low — the response feels more like reading an instructional article than having a lively exchange, which makes the interaction seem somewhat dull. Considering the evaluation standards, although the content is relevant and logical, the lack of naturalness and engagement leads to a poor interactive experience.
+**Final Decision:** \\boxed{{0}}
+--
 
----
-
-看到这个回复，你还想继续跟这个AI聊下去吗？
-
-### 评估标准（任一不满足即给0分）：
-
-1. **自然度**：回复是否流畅、简短、自然、口语化？是否给你真实互动的感觉？
-2. **切合兴趣**：回复是否和你的兴趣、需求、生活背景相关？
-3. **逻辑性**：回复是否正确理解并回应了你的消息？
-4. **吸引力**：你对这个AI有没有继续探知的欲望？是否感到无聊？
-5. **信息价值**：回复是对你说的话的简单重复或敷衍吹捧吗？
-
----
-
-### 输出格式
-
-首先说明你的判断理由（1-2句话），然后输出判断结果。
-
-Reasoning: [判断理由]
-Result: \\boxed{{1}} 或 \\boxed{{0}}
-
-（1 = 想继续聊，0 = 不想继续）
+### Please finish the task
 '''
 
 
@@ -175,25 +179,16 @@ class BenchmarkEvaluator:
         self.max_workers = 8
     
     def call_llm_judge(self, prompt: str, max_retries: int = 3) -> str:
-        """调用 LLM API 进行评估"""
-        headers = {
-            "Authorization": f"Bearer {API_KEY}",
-            "Content-Type": "application/json"
-        }
-        
-        data = {
-            "model": self.judge_model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 600,
-            "temperature": 0.1
-        }
-        
+        """调用 LLM API 进行评估 (使用 OpenAI SDK)"""
         for attempt in range(max_retries):
             try:
-                response = requests.post(API_URL, headers=headers, json=data, timeout=60)
-                response.raise_for_status()
-                result = response.json()
-                return result['choices'][0]['message']['content']
+                response = client.chat.completions.create(
+                    model=self.judge_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=600,
+                    temperature=0.1
+                )
+                return response.choices[0].message.content
             except Exception as e:
                 if attempt < max_retries - 1:
                     time.sleep(2 ** attempt)
@@ -202,17 +197,26 @@ class BenchmarkEvaluator:
                     raise e
         return ""
     
-    def build_history_string(self, conversations: List[Dict], up_to_round: int) -> str:
-        """构建对话历史字符串"""
+    def build_history_string(self, conversations: List[Dict], up_to_round: int, 
+                               current_method: str = None) -> str:
+        """
+        构建对话历史字符串
+        
+        格式遵循评估提示词要求:
+        You: <用户消息>, Other: <AI响应>, ...
+        """
         if up_to_round <= 0:
-            return "（这是对话的开始）"
+            return "(No previous conversation)"
         
         history_parts = []
         for i, conv in enumerate(conversations[:up_to_round]):
             user_msg = conv.get('user_message', conv.get('user', ''))
             # 获取助手响应 - 支持多种格式
-            if 'responses' in conv:
-                # Benchmark 上传格式
+            if 'responses' in conv and current_method:
+                # Benchmark 上传格式 - 获取指定方法的响应
+                assistant_msg = conv['responses'].get(current_method, '')
+            elif 'responses' in conv:
+                # Benchmark 上传格式 - 获取第一个响应
                 assistant_msg = list(conv['responses'].values())[0] if conv['responses'] else ''
             elif 'assistant' in conv:
                 # ALOE 原始格式
@@ -224,10 +228,9 @@ class BenchmarkEvaluator:
             else:
                 assistant_msg = ''
             
-            history_parts.append(f"用户: {user_msg}")
-            history_parts.append(f"AI: {assistant_msg}")
+            history_parts.append(f"You: \"{user_msg}\", Other: \"{assistant_msg}\"")
         
-        return "\n".join(history_parts)
+        return ", ".join(history_parts)
     
     def evaluate_alignment_score(self, profile: str, personality: str,
                                   history: str, user_message: str, 
@@ -335,19 +338,38 @@ class BenchmarkEvaluator:
         return result
     
     def parse_binary_result(self, response: str) -> Dict[str, Any]:
-        """解析二元判断结果"""
+        """
+        解析二元判断结果
+        
+        支持格式：
+        - \\boxed{1} 或 \\boxed{0}
+        - Final Decision: \\boxed{1}
+        - **Final Decision:** \\boxed{0}
+        """
         result = {'result': 0, 'reasoning': ''}
         
         try:
-            # 提取 boxed 结果
-            boxed_match = re.search(r'\\boxed\{(\d)\}', response)
-            if boxed_match:
+            # 提取 boxed 结果 (支持多种转义格式)
+            boxed_match = re.search(r'\\boxed\{([01])\}', response)
+            if not boxed_match:
+                # 尝试无转义格式
+                boxed_match = re.search(r'boxed\{([01])\}', response)
+            if not boxed_match:
+                # 备用：直接查找 Final Decision 后的 0 或 1
+                decision_match = re.search(r'Final Decision[:\s*]+.*?([01])', response, re.IGNORECASE)
+                if decision_match:
+                    result['result'] = int(decision_match.group(1))
+            else:
                 result['result'] = int(boxed_match.group(1))
             
-            # 提取理由
-            reasoning_match = re.search(r'Reasoning[:\s]*(.+?)(?=Result|$)', response, re.IGNORECASE | re.DOTALL)
+            # 提取理由 (支持多种格式)
+            # 尝试 "Judgment Reasoning:" 格式
+            reasoning_match = re.search(
+                r'(?:Judgment Reasoning|Reasoning)[:\s]*(.+?)(?=Final Decision|\*\*Final|$)', 
+                response, re.IGNORECASE | re.DOTALL
+            )
             if reasoning_match:
-                result['reasoning'] = reasoning_match.group(1).strip()[:200]
+                result['reasoning'] = reasoning_match.group(1).strip()[:300]
         
         except Exception as e:
             print(f"Parse error: {e}")
@@ -412,17 +434,20 @@ class BenchmarkEvaluator:
                 if not response:
                     continue
                 
-                # 构建历史
-                history = self.build_history_string(rounds, r_idx)
+                # 构建历史 (传入当前方法以获取正确的响应历史)
+                history = self.build_history_string(rounds, r_idx, method)
+                
+                # 合并 profile 和 personality 为统一格式
+                profile_info = f"{profile}; Personality: {personality}"
                 
                 # 细粒度评分
                 score_result = self.evaluate_alignment_score(
                     profile, personality, history, user_msg, response
                 )
                 
-                # 二元评估 (可选)
+                # 二元评估 (使用新提示词格式)
                 binary_result = self.evaluate_binary(
-                    profile, personality, history, user_msg, response
+                    profile_info, personality, history, user_msg, response
                 )
                 
                 results[method]['scores'].append(score_result['total'])
@@ -437,8 +462,18 @@ class BenchmarkEvaluator:
         
         return results
     
-    def evaluate_file(self, filepath: str, methods: List[str], task_id: str) -> Dict[str, Any]:
-        """评估整个文件"""
+    def evaluate_file(self, filepath: str, methods: List[str], task_id: str, 
+                       results_folder: str = None) -> Dict[str, Any]:
+        """
+        评估整个文件 - 支持增量保存和断点续评
+        
+        Args:
+            filepath: 数据文件路径
+            methods: 要评测的方法列表
+            task_id: 任务ID
+            results_folder: 结果保存目录（用于增量保存）
+        """
+        import os
         
         # 加载数据
         sessions = []
@@ -447,24 +482,63 @@ class BenchmarkEvaluator:
                 if line.strip():
                     sessions.append(json.loads(line))
         
-        # 汇总结果
+        # 中间结果文件路径
+        checkpoint_path = None
+        if results_folder:
+            checkpoint_path = os.path.join(results_folder, f"{task_id}_checkpoint.json")
+        
+        # 尝试加载已有的中间结果（断点续评）
         all_results = {method: {'all_scores': [], 'all_binary': [], 'sessions': []} for method in methods}
+        completed_sessions = set()
+        
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            try:
+                with open(checkpoint_path, 'r', encoding='utf-8') as f:
+                    checkpoint = json.load(f)
+                    all_results = checkpoint.get('all_results', all_results)
+                    completed_sessions = set(checkpoint.get('completed_sessions', []))
+                    print(f"Resuming from checkpoint: {len(completed_sessions)} sessions already completed")
+            except Exception as e:
+                print(f"Failed to load checkpoint: {e}")
         
         # 评估每个会话
         for i, session in enumerate(sessions):
-            print(f"Evaluating session {i+1}/{len(sessions)}...")
-            session_results = self.evaluate_session(session, methods)
+            session_id = session.get('session_id', f'session_{i}')
             
-            for method in methods:
-                if session_results[method]['scores']:
-                    all_results[method]['all_scores'].extend(session_results[method]['scores'])
-                    all_results[method]['all_binary'].extend(session_results[method]['binary'])
-                    all_results[method]['sessions'].append({
-                        'session_id': session.get('session_id', f'session_{i}'),
-                        'scores': session_results[method]['scores'],
-                        'binary': session_results[method]['binary'],
-                        'details': session_results[method]['details']
-                    })
+            # 跳过已完成的会话
+            if session_id in completed_sessions:
+                print(f"Skipping session {i+1}/{len(sessions)} (already completed)")
+                continue
+            
+            print(f"Evaluating session {i+1}/{len(sessions)} [{session_id}]...")
+            
+            try:
+                session_results = self.evaluate_session(session, methods)
+                
+                for method in methods:
+                    if session_results[method]['scores']:
+                        all_results[method]['all_scores'].extend(session_results[method]['scores'])
+                        all_results[method]['all_binary'].extend(session_results[method]['binary'])
+                        all_results[method]['sessions'].append({
+                            'session_id': session_id,
+                            'scores': session_results[method]['scores'],
+                            'binary': session_results[method]['binary'],
+                            'details': session_results[method]['details']
+                        })
+                
+                completed_sessions.add(session_id)
+                
+                # 每完成一个 session 就保存中间结果
+                if checkpoint_path:
+                    self._save_checkpoint(checkpoint_path, all_results, list(completed_sessions), task_id)
+                    print(f"  ✓ Checkpoint saved ({len(completed_sessions)}/{len(sessions)} sessions)")
+                    
+            except Exception as e:
+                print(f"  ✗ Error evaluating session {session_id}: {e}")
+                # 保存已完成的结果，继续下一个 session
+                if checkpoint_path:
+                    self._save_checkpoint(checkpoint_path, all_results, list(completed_sessions), task_id)
+                continue
         
         # 计算最终指标
         final_results = {
@@ -476,17 +550,18 @@ class BenchmarkEvaluator:
         for method in methods:
             scores = all_results[method]['all_scores']
             binary = all_results[method]['all_binary']
+            method_sessions = all_results[method]['sessions']
             
-            if scores:
+            if scores and method_sessions:
                 metrics = self.calculate_metrics(scores)
                 
                 # 计算每轮的 AL(k) 曲线
-                max_rounds = max(len(s['scores']) for s in all_results[method]['sessions'])
+                max_rounds = max((len(s['scores']) for s in method_sessions), default=0)
                 al_curve = []
                 for r in range(max_rounds):
                     round_scores = [
                         s['scores'][r] if r < len(s['scores']) else None
-                        for s in all_results[method]['sessions']
+                        for s in method_sessions
                     ]
                     round_scores = [s for s in round_scores if s is not None]
                     if round_scores:
@@ -500,13 +575,42 @@ class BenchmarkEvaluator:
                     'binary_alignment_rate': round(binary_rate, 2),
                     'al_curve': al_curve,
                     'total_evaluations': len(scores),
-                    'sessions': all_results[method]['sessions']
+                    'sessions': method_sessions
+                }
+            else:
+                # 没有评估结果时的默认值
+                final_results['methods'][method] = {
+                    'metrics': {'AVG': 0, 'N_IR': 0, 'N_R2': 0},
+                    'binary_alignment_rate': 0,
+                    'al_curve': [],
+                    'total_evaluations': 0,
+                    'sessions': []
                 }
         
         # 生成雷达图数据
         final_results['radar_data'] = self._generate_radar_data(final_results['methods'])
         
+        # 删除 checkpoint 文件（评估完成）
+        if checkpoint_path and os.path.exists(checkpoint_path):
+            try:
+                os.remove(checkpoint_path)
+                print(f"Checkpoint file removed (evaluation complete)")
+            except:
+                pass
+        
         return final_results
+    
+    def _save_checkpoint(self, checkpoint_path: str, all_results: Dict, 
+                         completed_sessions: List[str], task_id: str):
+        """保存中间结果到 checkpoint 文件"""
+        checkpoint = {
+            'task_id': task_id,
+            'all_results': all_results,
+            'completed_sessions': completed_sessions,
+            'timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        with open(checkpoint_path, 'w', encoding='utf-8') as f:
+            json.dump(checkpoint, f, ensure_ascii=False, indent=2)
     
     def _generate_radar_data(self, methods_results: Dict) -> Dict:
         """生成雷达图可视化数据"""

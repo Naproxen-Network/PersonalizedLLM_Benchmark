@@ -307,43 +307,36 @@ Conversation: [分数]/20
 Total: \boxed{[总分]}
 ```
 
-### 模式二：二元对齐判断 (0/1)
+### 模式二：二元对齐判断 (0/1) ⭐ 主要评估方式
 
-参考 RLPA 的严格评估风格，模拟用户视角判断"是否想继续聊"。
+模拟用户视角判断"是否想继续聊"，评估标准严格，任一不满足即为 0 分。
 
 ```
-# 任务：判断用户是否愿意继续与AI对话
+You are a user on Weibo, and someone just added you as a friend. 
+You didn't know each other before.
 
-你正在扮演以下用户：
+- **Your profile and personality traits:** {profile}
+- **Chat history between you two:** {history}
+- **The message you just sent to the other person:** {user_message}
+- **The other person's reply:** {response}
 
-## 你的个人档案
-{profile}
+After seeing the other person's reply, do you still want to continue talking?
 
-## 你的性格特征
-{personality}
+### Evaluation Criteria:
+1. **Naturalness**: Does the reply feel fluent, brief, natural, conversational?
+2. **Relevance to Interests**: Does the reply relate to your interests and needs?
+3. **Logical Consistency**: Does the reply logically respond to your message?
+4. **Excitement Factor**: Are you curious to learn more? Did the reply feel boring?
+5. **Information Value**: Is the reply simply repeating what you said or shallow praise?
 
-## 对话历史
-{history}
+**Task Requirements:**
+Please make a strict judgment. If even ONE criterion is not met, give a score of 0.
+- If you'd like to continue chatting → output **1**
+- If you don't want to continue → output **0**
 
-## 你刚发送的消息
-{user_message}
-
-## AI的回复
-{response}
-
-看到这个回复，你还想继续跟这个AI聊下去吗？
-
-### 评估标准（任一不满足即给0分）：
-
-1. **自然度**：回复是否流畅、简短、自然、口语化？
-2. **切合兴趣**：回复是否和你的兴趣、需求相关？
-3. **逻辑性**：回复是否正确理解并回应了你的消息？
-4. **吸引力**：你对这个AI有没有继续探知的欲望？
-5. **信息价值**：回复是对你说的话的简单重复吗？
-
-## 输出格式
-Reasoning: [判断理由]
-Result: \boxed{1} 或 \boxed{0}
+### Output Format:
+- First explain your judgment reasoning.
+- Then output the final decision: \boxed{1} or \boxed{0}
 ```
 
 ### 设计理念

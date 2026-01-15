@@ -163,13 +163,17 @@ def evaluate():
     
     # Create evaluation task
     task_id = str(uuid.uuid4())[:8]
+    results_folder = app.config['RESULTS_FOLDER']
     
     try:
-        # Run evaluation
-        results = evaluator.evaluate_file(filepath, methods, task_id)
+        # Run evaluation with incremental saving
+        results = evaluator.evaluate_file(
+            filepath, methods, task_id, 
+            results_folder=results_folder
+        )
         
-        # Save results
-        result_path = os.path.join(app.config['RESULTS_FOLDER'], f"{task_id}_results.json")
+        # Save final results
+        result_path = os.path.join(results_folder, f"{task_id}_results.json")
         with open(result_path, 'w', encoding='utf-8') as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
         
@@ -181,6 +185,20 @@ def evaluate():
         })
     
     except Exception as e:
+        # 即使失败也尝试返回部分结果
+        checkpoint_path = os.path.join(results_folder, f"{task_id}_checkpoint.json")
+        if os.path.exists(checkpoint_path):
+            try:
+                with open(checkpoint_path, 'r', encoding='utf-8') as f:
+                    partial = json.load(f)
+                return jsonify({
+                    'success': False, 
+                    'error': f"{t['eval_error']}: {str(e)}",
+                    'partial_results': partial,
+                    'message': '部分评测结果已保存'
+                })
+            except:
+                pass
         return jsonify({'success': False, 'error': f"{t['eval_error']}: {str(e)}"})
 
 
@@ -244,4 +262,5 @@ def api_status():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # use_reloader=False 防止在评测过程中因外部包变化导致服务器重启
+    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
